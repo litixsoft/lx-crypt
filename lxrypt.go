@@ -2,11 +2,9 @@
 package lxcrypt
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -27,7 +25,7 @@ func GenerateKey(size uint) ([]byte, error) {
 
 	// Check the size
 	if size == 0 || size > 32 {
-		return key, fmt.Errorf("Key size should be between 1 and 32")
+		return key, fmt.Errorf("key size should be between %d and %d", 1, 32)
 	}
 
 	// Use the crypto random
@@ -109,61 +107,4 @@ func DecryptAES(key, text []byte) ([]byte, error) {
 	cfb.XORKeyStream(text, text)
 
 	return base64.StdEncoding.DecodeString(string(text))
-}
-
-// GenerateSalt, generate a new salt for password save
-func GenerateSalt(secret []byte, saltSize int) ([]byte, error) {
-
-	// Salt
-	var salt []byte
-
-	// Make byte array for buffer
-	buf := make([]byte, saltSize, saltSize+sha1.Size)
-	_, err := io.ReadFull(rand.Reader, buf)
-
-	if err == nil {
-		// Generate hash for salt
-		hash := sha1.New()
-		hash.Write(buf)
-		hash.Write(secret)
-		salt = hash.Sum(buf)
-	}
-
-	return salt, err
-}
-
-// GenerateSha1Password, generate a password with salt
-func GenerateSha1Password(salt []byte, password []byte) []byte {
-
-	combination := string(salt) + string(password)
-	passwordHash := sha1.New()
-	io.WriteString(passwordHash, combination)
-
-	return passwordHash.Sum(nil)
-}
-
-// Generate new password hash and salt
-func GenerateSaltAndSha1Password(key, password []byte) ([]byte, []byte, error) {
-
-	var passwordHash []byte
-
-	// Salt with key
-	salt, err := GenerateSalt(key, 8)
-	if err == nil {
-		// Generate password hash
-		passwordHash = GenerateSha1Password(salt, []byte(password))
-	}
-
-	return salt, passwordHash, nil
-}
-
-// CheckSha1Password, generate passwordHash with password and hash.
-// Equal this passwordHash with checkPasswordHash.
-func CheckSha1Password(salt []byte, password []byte, checkPasswordHash []byte) bool {
-
-	// Generate new password hash for equal
-	passwordHash := GenerateSha1Password(salt, password)
-
-	// Equal the new passwordHash with the checkPasswordHash
-	return bytes.Equal(passwordHash, checkPasswordHash)
 }

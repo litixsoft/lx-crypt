@@ -40,7 +40,7 @@ func TestGenerateKeyError(t *testing.T) {
 
 	_, err := lxcrypt.GenerateKey(0)
 	assert.NotNil(t, err, "should be return error.")
-	assert.Equal(t, "Key size should be between 1 and 32", err.Error(), "should be return correct error message.")
+	assert.Equal(t, "key size should be between 1 and 32", err.Error(), "should be return correct error message.")
 }
 
 // TestGetKeyFromNotExistsFile, get key from not exists file.
@@ -162,69 +162,4 @@ func TestDecryptError(t *testing.T) {
 	_, err := lxcrypt.DecryptAES(key, []byte("a"))
 	assert.NotNil(t, err, "should be return a error.")
 	assert.Equal(t, "text too short", err.Error(), "should be return correct error message.")
-}
-
-// TestSaltAndPasswordHash, generate password with salt.
-func TestSaltAndPasswordHash(t *testing.T) {
-
-	// Before generate salt, create a key for test
-	key := make([]byte, 32)
-
-	// Use the crypto random
-	if _, err := rand.Read(key); err != nil {
-		t.Fatalf("Create own key: %v", err)
-	}
-
-	// Generate salt with key
-	salt, err := lxcrypt.GenerateSalt(key, 8)
-	if err != nil {
-		t.Fatalf("Generate salt: %v", err)
-	}
-
-	// Generate password with salt
-	sha1Pwd := lxcrypt.GenerateSha1Password(salt, []byte("my-password"))
-
-	// Simulate save in db
-	dbSaltStr := string(salt)
-	dbPasswordHashStr := string(sha1Pwd)
-
-	// Wrong password for check
-	wrongPwd := []byte("wrong-password")
-
-	// Correct password for check
-	correctPwd := []byte("my-password")
-
-	assert.False(t, lxcrypt.CheckSha1Password([]byte(dbSaltStr), wrongPwd, []byte(dbPasswordHashStr)), "wrong password should be return false.")
-	assert.True(t, lxcrypt.CheckSha1Password([]byte(dbSaltStr), correctPwd, []byte(dbPasswordHashStr)), "correct password should be return true.")
-}
-
-// TestGenerateSaltAndSha1Password, generate salt and password with key.
-func TestGenerateSaltAndSha1Password(t *testing.T) {
-	//Convey("Generate salt and password with key, should be  create correct password.", t, func() {
-
-	// Before generate salt, create a key for test
-	key := make([]byte, 32)
-
-	// Use the crypto random
-	if _, err := rand.Read(key); err != nil {
-		t.Fatalf("Create own key: %v", err)
-	}
-
-	salt, sha1Pwd, err := lxcrypt.GenerateSaltAndSha1Password(key, []byte("my-password"))
-	if err != nil {
-		t.Fatalf("GenerateSaltAndSha1Password: %v", err)
-	}
-
-	// Simulate save in db
-	dbSaltStr := string(salt)
-	dbPasswordHashStr := string(sha1Pwd)
-
-	// Wrong password for check
-	wrongPwd := []byte("wrong-password")
-
-	// Correct password for check
-	correctPwd := []byte("my-password")
-
-	assert.False(t, lxcrypt.CheckSha1Password([]byte(dbSaltStr), wrongPwd, []byte(dbPasswordHashStr)), "wrong password should be return false.")
-	assert.True(t, lxcrypt.CheckSha1Password([]byte(dbSaltStr), correctPwd, []byte(dbPasswordHashStr)), "correct password should be return true.")
 }
